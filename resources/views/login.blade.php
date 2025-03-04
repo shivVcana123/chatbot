@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -10,7 +9,7 @@
     rel="stylesheet">
   <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/sign.css">
+<link rel="stylesheet" href="{{asset('public/assets/sign.css')}}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
@@ -21,7 +20,7 @@
 </head>
 
 <body>
-
+    
   <section class="login-container">
     <div class="container ">
       <div class="row">
@@ -53,15 +52,27 @@
               </div>
             </div>
             <div class="Set_usign">Or Sign in Using Your Email Address</div>
+     @if (session('error'))
+            <div class="col-sm-12">
+              <div class="alert  alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+            </div>
+            @endif
             <form action ="{{route('login')}}" method ="post">
               @csrf()
               <div class="row set-data">
                 <div class="form-group col-lg-6  ">
                   <label for="email">Your Email</label>
-                  <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" id="email" placeholder="typeyourmail@example.com" >
-                  @error('email')
-                      <div style="color:red">{{ $message }}</div>
-                  @enderror
+                  <input type="email" class="form-control" name="email" id="email" placeholder="typeyourmail@example.com" >
+                 @if ($errors->has('email'))
+                    <div style="color: red;">
+                        {{ $errors->first('email') }}
+                    </div>
+                @endif
                 </div>
 
                 <div class="form-group col-lg-6 set-pass-icon"> 
@@ -77,8 +88,10 @@
                   <label class="form-check-label" for="rememberMe">Remember Me</label>
                 </div> -->
                 <div class="col-lg-8 set_pass ">
-                  <a href="#">Forgot Password?</a>
+                  <a href="{{ route('forgetpassword') }}">Forgot Password?</a>
                 </div>
+
+                 
                 <div class=" col-12 set_sign">
                 <button type="submit" class="setBtn_primary signin_button">Sign In</button>
               </div>

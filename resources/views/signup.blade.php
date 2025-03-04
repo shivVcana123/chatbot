@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -10,7 +9,7 @@
     rel="stylesheet">
   <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/sign.css">
+<link rel="stylesheet" href="{{asset('public/assets/sign.css')}}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
@@ -28,7 +27,15 @@
         <div class="col-lg-6"></div>
         <div class="col-lg-6 form_section">
           <div class="login-form ">
-            <h2 class="text-left set_mainheading">Sign In</h2>
+             <div class="row">
+                <div class="col-6">
+                <h2 class="text-left set_mainheading">Sign In</h2>
+
+                </div>
+                <div class="col-6">
+                <a class="text-left setacount" href="{{url('/login')}}">You already have a account</a>
+                </div>
+            </div>
             <div class="row">
               <div class="col-lg-6">
 

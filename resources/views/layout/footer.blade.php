@@ -1,6 +1,4 @@
 
-
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.js"></script>
         {{-- <script src="script.js"></script> --}}
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
@@ -45,6 +43,43 @@
                     $(".dropdown_c .drop-content ul").slideUp();
             });
 
+            // $(document).ready(function() {
+            //     $('.download-history').on('click', function() {
+            //         var chatbotId = $(this).data('id');
+            //         window.location.href = '{{ route("download-history-pdf", ":id") }}'.replace(':id', chatbotId);
+            //     });
+            // });
+            $(document).ready(function() {
+                
+                $('.download-history').on('click', function() {
+                    // var chatbotId = $(this).data('id');
+                    var bot_user_id = $('.bot_user_id').val();
+                    // alert(chatbotId);
+                    if (bot_user_id == '') {
+                        alert('This user does not have any chat');
+                        return false;
+                    }
+
+                    $.ajax({
+                        url: '{{ route("download-history-pdf", ":id") }}'.replace(':id', bot_user_id),
+                        method: 'GET',
+                        xhrFields: {
+                            responseType: 'blob'
+                        },
+                        success: function(data, status, xhr) {
+                            var blob = new Blob([data], { type: 'application/pdf' });
+                            var link = document.createElement('a');
+                            link.href = window.URL.createObjectURL(blob);
+                            link.download = "history.pdf";
+                            link.click();
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error downloading PDF:', error);
+                        }
+                    });
+                });
+            });
+
 
             //profile hover end
         </script>
@@ -58,10 +93,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="https://cdn.datatables.net/2.1.5/js/dataTables.js"></script>  
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
     {{-- <script src="http://localhost:8000/chatbot-script/1"></script> --}}
-      {{-- <script src="http://localhost:8000/scriptchatbot/1"></script> --}}
-          {{-- <script src="path/to/chatbot.js"></script> --}}
-          <script src="http://localhost:8000/scriptchatbots/{{ $scriptId }}"></script>
+ {{-- <script src=" https://9cc5-124-253-217-107.ngrok-free.app/scriptchatbots/1"></script>  --}}
+          <script src="https://vcanaglobal.io/chatbot/scriptchatbots/{{ $scriptId }}"></script>
+        
+         
 
 

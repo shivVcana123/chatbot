@@ -295,16 +295,15 @@
                     <h4>Bot Chat</h4>
 
                 </div>
+
                 <div class="col-8 tab-btn">
                     <ul class="nav nav-pills mb-3 d-flex justify-content-end" id="pills-tab" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill" data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home" aria-selected="true">Inbox View</button>
                         </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-profile" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">Table View</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact" aria-selected="false">Download data</button>
+
+                        <li class="nav-item download-chat-history" role="presentation" >
+                            <button class="nav-link" id="pills-contact-tab" data-id="" data-bs-toggle="pill" data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact" aria-selected="false">Download data</button>
                         </li>
                     </ul>
                 </div>
@@ -316,7 +315,7 @@
                             <div class="col-3 user-sidebar siderbar-border">
                                 <div class="set-recent-heading">
                                     <h3>Recent Chats</h3>
-                                    <img src="{{asset('assets/images/editicon.png')}}">
+                                    <img src="{{asset('public/assets/images/editicon.png')}}">
                                 </div>
                                 <div>
                                     <form class="bot-search mt-3">
@@ -326,19 +325,16 @@
                                 </div>
                                 <div>
                                 </div>
-                               @if (count($botChats) > 0)
-                                @foreach ($botChats[0]['questionAnswer'] as  $bots)
-                                <div class="user-data mt-4 d-flex" id="user-kapil">
+                 
+                                @if (count($botChats) > 0)
+                                @foreach ($botChats as $bots)
+                                <div class="user-data mt-4 d-flex userChatData" data-id="{{$bots->id ?? ''}}">
                                     <div class="user-image">
-                                        <img src="{{asset('assets/images/userk.png')}}" alt="" class="mr-2">
+                                        <img src="{{asset('public/assets/images/userk.png')}}" alt="" class="mr-2">
                                     </div>
                                     <div>
-                                        <h4>{{$bots->chatBots->name}}</h4>
-                                        <p>You are Most Welcome</p>
-                                    </div>
-                                    <div class="user-icon">
-                                        <i class="fa-solid fa-ellipsis mb-2" style="color: #777777;"></i><br>
-                                        <span>6</span>
+                                        <h4>{{$bots->name ?? ''}}</h4>
+                                        <p>{{$bots->email ?? ''}}</p>
                                     </div>
                                 </div>
                                 @endforeach
@@ -346,27 +342,28 @@
                                 <p>Chat Data Not Found</p>
                                 @endif
                             </div>
-                            <div class="col-6 siderbar-border" id="user-chat-section">
+
+                            <div class="col-9 siderbar-border" id="user-chat-section">
                                 <div class="set-chat-section">
                                     <div class="set-user-imgSection d-flex justify-content-between">
                                         <div class="user-hearder  d-flex">
                                             <div class="inner-data">
-                                                <img src="{{asset('assets/images/userk.png')}}" alt="" class="mr-5">
+                                                <img src="{{asset('public/assets/images/userk.png')}}" alt="" class="mr-5">
                                             </div>
                                             <div class="set-chat-icon">
-                                                <h4>Kapil Kapoor</h4>
+                                                <h4 id="user_name">Kapil Kapoor</h4>
                                                 <p>Are Active</p>
                                             </div>
                                         </div>
                                         <div class="header-icon">
-                                            <img src="{{asset('assets/images/call.png')}}" alt="" class="ml-1">
-                                            <img src="{{asset('assets/images/video.png')}}" alt="" class="ml-1">
-                                            <img src="{{asset('assets/images/user-a.png')}}" alt="" class="ml-1">
+                                            <img src="{{asset('public/assets/images/call.png')}}" alt="" class="ml-1">
+                                            <img src="{{asset('public/assets/images/video.png')}}" alt="" class="ml-1">
+                                            <img src="{{asset('public/assets/images/user-a.png')}}" alt="" class="ml-1">
                                         </div>
                                     </div>
 
                                     <div class="chat-body">
-                                        <div class="message">
+                                        <!-- <div class="message">
                                             <div class="avatar"><img src="avatar1.png" alt="User Avatar"></div>
                                             <div class="text">Hello</div>
                                         </div>
@@ -374,69 +371,27 @@
                                             <div class="avatar"><img src="avatar1.png" alt="User Avatar"></div>
                                             <div class="text">Lorem Ipsum</div>
                                         </div>
-                                        <div class="message">
-                                            <div class="avatar"><img src="avatar1.png" alt="User Avatar"></div>
-                                            <div class="text">Lorem Ipsum Dolor text dummy</div>
-                                        </div>
+
                                         <div class="message sent">
                                             <div class="text">Hi</div>
                                             <div class="avatar"><img src="avatar2.png" alt="User Avatar"></div>
                                         </div>
-                                        <div class="message sent">
-                                            <div class="text">Lorem Ipsum</div>
-                                            <div class="avatar"><img src="avatar2.png" alt="User Avatar"></div>
-                                        </div>
-                                        <div class="message sent">
-                                            <div class="text">Lorem Ipsum Dolor text dummy</div>
-                                            <div class="avatar"><img src="avatar2.png" alt="User Avatar"></div>
-                                        </div>
-                                        <div class="message sent">
-                                            <div class="text">
-                                                <div>Look at the picture</div>
-                                            </div>
-                                            <div class="avatar"><img src="avatar2.png" alt="User Avatar"></div>
-                                        </div>
-                                        <div class="avtar-img text-end mt-4">
-                                            <img src="{{asset('assets/images/chatuserimg.png')}}" alt="" class="mr-2">
-                                        </div>
+
                                         <div class="message">
                                             <div class="avatar"><img src="avatar1.png" alt="User Avatar"></div>
                                             <div class="text">Thank You</div>
-                                        </div>
-
+                                        </div> -->
                                     </div>
+
                                     <div class="chat-footer">
                                         <div class="icons">
-                                            <img src="{{asset('assets/images/imoje.png')}}" alt="Emoji Icon">
-                                            <img src="{{asset('assets/images/file.png')}}" alt="Emoji Icon">
-                                            <img src="{{asset('assets/images/camera.png')}}" alt="Attachment Icon">
-                                            <img src="{{asset('assets/images/mic.png')}}" alt="Camera Icon">
+                                            <img src="{{asset('public/assets/images/imoje.png')}}" alt="Emoji Icon">
+                                            <img src="{{asset('public/assets/images/file.png')}}" alt="Emoji Icon">
+                                            <img src="{{asset('public/assets/images/camera.png')}}" alt="Attachment Icon">
+                                            <img src="{{asset('public/assets/images/mic.png')}}" alt="Camera Icon">
                                         </div>
-                                        <input type="text" placeholder="Enter Your Text Here">
-                                        <button> <img src="{{asset('assets/images/send.png')}}"></button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-3 siderbar-border" id="user-details-section">
-                                <div class="info-section">
-                                    <div class=" mr-5 text-center mt-5">
-                                        <img src="{{asset('assets/images/imgchat.png')}}" alt="Bot Image">
-                                        <h5>Kapil Kapoor</h5>
-                                        <p>kapil@vcanaglobal.com</p>
-                                    </div>
-                                    <div class="boat-info mt-5 ml-4 mt-3">
-                                        <p> <i class="fa-solid fa-bell mr-2" style="color: #606060;"></i>Turn Off Notifications</p>
-                                        <p><i class="fa-solid fa-user mr-2" style="color: #606060;"></i> View Profile</p>
-                                        <p> <i class="fa-solid fa-trash mr-2" style="color: #606060; "></i>Delete Chat</p>
-                                    </div>
-                                    <div class="shared">
-                                        <h5>Shared File</h5>
-                                        <img src="{{asset('assets/images/imgchat.png')}}" alt="Bot Image">
-                                        <img src="{{asset('assets/images/imgchat.png')}}" alt="Bot Image">
-                                        <img src="{{asset('assets/images/imgchat.png')}}" alt="Bot Image">
-                                        <img src="{{asset('assets/images/imgchat.png')}}" alt="Bot Image">
-
-
+                                        <input type="text" placeholder="Enter Your Text Here" readonly>
+                                        <button> <img src="{{asset('public/assets/images/send.png')}}"></button>
                                     </div>
                                 </div>
                             </div>
@@ -447,7 +402,7 @@
 
 
                     </div>
-                    <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab">
+                    <!-- <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab"> -->
 
 
                     </div>
@@ -459,10 +414,167 @@
 
 
 <script>
-    document.getElementById('user-kapil').addEventListener('click', function() {
-        document.getElementById('user-chat-section').style.display = 'block';
-        document.getElementById('user-details-section').style.display = 'block';
+    $(document).ready(function() {
+    $('.download-chat-history').on('click', function() {
+        var chatbotId = $('#pills-contact-tab').data('id');
+        if (!chatbotId) {
+            alert("No Chatbot ID found!");
+            return;
+        }
+
+        // Perform AJAX request to fetch the PDF
+        $.ajax({
+            url: '{{ route("download-history-pdf", ":id") }}'.replace(':id', chatbotId),
+            method: 'GET',
+            xhrFields: {
+                responseType: 'blob' // Indicate the response should be a Blob (binary data)
+            },
+            success: function(data, status, xhr) {
+                // Create a new Blob from the response data (PDF content)
+                var blob = new Blob([data], {
+                    type: 'application/pdf'
+                });
+
+                // Create a temporary link element to trigger the download
+                var link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = "chat-history.pdf"; // Define the name of the downloaded file
+                link.click(); // Programmatically trigger the download
+            },
+            error: function(xhr, status, error) {
+                console.error('Error downloading PDF:', error);
+                alert("Error downloading chat history.");
+            }
+        });
     });
+});
+
+    
+    // Get all elements with the 'userChatData' class
+    let chatElements = document.getElementsByClassName('userChatData');
+
+    // Loop through the HTMLCollection and attach the event listener to each element
+    for (let i = 0; i < chatElements.length; i++) {
+        chatElements[i].addEventListener('click', function() {
+            // Get the data-id attribute from the clicked element
+            var bot_user_id = this.getAttribute('data-id');
+            // alert(bot_user_id);
+            // Make an AJAX request to fetch chat data
+            $.ajax({
+                url: "{{route('getBotChatData')}}" + '/' + bot_user_id,
+                type: 'GET',
+                success: function(response) {
+                    const getBotChatData = response.data;
+                    // console.log(getBotChatData);
+                    // Clear the chat body before appending new messages
+                    const chatBody = document.querySelector('.chat-body');
+                    chatBody.innerHTML = '';
+
+                    // Set the user's name from the response
+                    document.getElementById('user_name').textContent = getBotChatData[0].name ?? '';
+                    document.getElementById('pills-contact-tab').setAttribute('data-id',bot_user_id);
+
+                    // Loop through the response and append each message dynamically
+                    $.each(getBotChatData[0].question_answer, function(key, value) {
+
+                        // console.log('value',value);
+                        // Append bot question if available
+                        if (value.bot_question) {
+                            const botMessage = `
+                            <div class="message">
+                                <div class="text">${value.bot_question.question}</div>
+                            </div>
+                        `;
+                            chatBody.insertAdjacentHTML('beforeend', botMessage);
+                        }
+
+
+                         if (value.bot_question.chat_bot_id != '0' && value.bot_question.answer != null)
+                         {
+                             const userMessage = `
+                               <div class="message sent">
+                                 <div class="text">${value.bot_question.answer}</div>
+                             </div>
+                         `;
+                             chatBody.insertAdjacentHTML('beforeend', userMessage);
+                         }else{
+
+                            if (value.answer) {
+                                const userMessage = `
+                                <div class="message sent">
+                                    <div class="text">${value.answer}</div>
+                                </div>
+                            `;
+                                chatBody.insertAdjacentHTML('beforeend', userMessage);
+                            }
+                         }
+                    });
+                
+                    // Check if last_response exists and has at least one element
+                    if (getBotChatData[0].last_response && getBotChatData[0].last_response.length > 0) {
+                        // Get the last message in the array
+                        let lastResponse = getBotChatData[0].last_response[getBotChatData[0].last_response.length - 1];
+
+                        // Check for last question
+                        if (lastResponse.question) {
+                            // Display the last question
+                            const userMessage = `
+                                <div class="message sent">
+                                    <div class="text">${lastResponse.question}</div>
+                                </div>
+                            `;
+                            chatBody.insertAdjacentHTML('beforeend', userMessage);
+                        }
+
+                        console.log(lastResponse.answer);
+                        console.log(lastResponse.answer);
+
+                        // Check if lastResponse.answer contains a link and extract the URL
+                        if (lastResponse.answer) {
+                            // Regular expression to match the href URL inside the anchor tag
+                            const urlRegex = /href="([^"]*)"/;
+                            const match = lastResponse.answer.match(urlRegex);
+
+                            if (match && match[1]) {
+                                // Extracted URL
+                                const extractedUrl = match[1];
+                                console.log(extractedUrl); // Outputs the extracted URL
+
+                                // Display the extracted URL (instead of the full anchor tag)
+                                const botMessage = `
+                                    <div class="message">
+                                        <div class="text">${extractedUrl}</div>
+                                    </div>
+                                `;
+                                chatBody.insertAdjacentHTML('beforeend', botMessage);
+                            }
+                        }
+
+                        // Check for last answer
+                        // if (lastResponse.answer) {
+                        //     // Display the last answer
+                        //     const botMessage = `
+                        //         <div class="message">
+                        //             <div class="text">${lastResponse.answer}</div>
+                        //         </div>
+                        //     `;
+                        //     chatBody.insertAdjacentHTML('beforeend', botMessage);
+                        // }
+                    }
+
+
+                    // Show the chat and details sections
+                    document.getElementById('user-chat-section').style.display = 'block';
+                    document.getElementById('user-details-section').style.display = 'block';
+                },
+                error: function(err) {
+                    console.error("Error fetching chat data", err);
+                }
+            });
+        });
+    }
+
+    // Initially hide the chat and details sections
     document.getElementById('user-chat-section').style.display = 'none';
     document.getElementById('user-details-section').style.display = 'none';
 </script>

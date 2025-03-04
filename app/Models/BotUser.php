@@ -13,4 +13,13 @@ class BotUser extends Model
          return $this->hasMany(QuestionAnswer::class,'bot_user_id');
     }
 
+    public function bot()
+    {
+         return $this->belongsTo(ChatBot::class,'chat_bot_id');
+    }
+    public function lastResponse()
+    {
+         return $this->hasMany(LastResponse::class,'bot_user_id');
+    }
+
 }

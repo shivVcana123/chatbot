@@ -12,7 +12,7 @@
             <div class="set-user-imgSection d-flex justify-content-between">
                 <div class="user-hearder  d-flex">
                     <div class="inner-data">
-                        <img src="{{asset('assets/images/userk.png')}}" alt="" class="mr-5">
+                        <img src="{{asset('publicassets/images/userk.png')}}" alt="" class="mr-5">
                     </div>
                     <div class="set-chat-icon">
                         <h4>Kapil Kapoor</h4>
@@ -20,9 +20,9 @@
                     </div>
                 </div>
                 <div class="header-icon">
-                    <img src="{{asset('assets/images/call.png')}}" alt="" class="ml-1">
-                    <img src="{{asset('assets/images/video.png')}}" alt="" class="ml-1">
-                    <img src="{{asset('assets/images/user-a.png')}}" alt="" class="ml-1">
+                    <img src="{{asset('publicassets/images/call.png')}}" alt="" class="ml-1">
+                    <img src="{{asset('publicassets/images/video.png')}}" alt="" class="ml-1">
+                    <img src="{{asset('publicassets/images/user-a.png')}}" alt="" class="ml-1">
                 </div>
             </div>
 
@@ -68,14 +68,14 @@
             </div>
             <div class="chat-footer">
                 <div class="icons">
-                    <img src="{{asset('assets/images/imoje.png')}}" alt="Emoji Icon">
-                    <img src="{{asset('assets/images/file.png')}}" alt="Emoji Icon">
-                    <img src="{{asset('assets/images/camera.png')}}" alt="Attachment Icon">
-                    <img src="{{asset('assets/images/mic.png')}}" alt="Camera Icon">
+                    <img src="{{asset('publicassets/images/imoje.png')}}" alt="Emoji Icon">
+                    <img src="{{asset('publicassets/images/file.png')}}" alt="Emoji Icon">
+                    <img src="{{asset('publicassets/images/camera.png')}}" alt="Attachment Icon">
+                    <img src="{{asset('publicassets/images/mic.png')}}" alt="Camera Icon">
                 </div>
                 <form action="{{route('message')}}" method="post">
                     <input type="text" name="message" placeholder="Enter Your Text Here">
-                    <button type="submit" name="submit"><img src="{{asset('assets/images/send.png')}}"></button>
+                    <button type="submit" name="submit"><img src="{{asset('publicassets/images/send.png')}}"></button>
                 </form>
             </div>
         </div>

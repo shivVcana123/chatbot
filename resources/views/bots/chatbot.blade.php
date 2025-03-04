@@ -126,7 +126,7 @@
     max-width: 70% !important;
     padding: 10px;
     background-color:{{ $chatbot->question_color }};
-    border-radius: 15px;
+    /* border-radius: 15px; */
     position: relative;
     border-radius: 0px 5px 5px 0px;
     color: #606060;
@@ -225,10 +225,10 @@ button.option1Select {
             </div>
             <div class='icon-head'>
                 <div>
-                    <img src='{{ asset('assets/images/reload.png')}}'>
+                    <img src="{{ asset('public/assets/images/reload.png')}}">
                 </div>
                 <div class='closeicon'>
-                    <img src='{{ asset('assets/images/colse.png')}}' id='close-chat-icon'>
+                    <img src="{{ asset('public/assets/images/colse.png')}}" id='close-chat-icon'>
                 </div>
             </div>
         </div>
@@ -253,8 +253,8 @@ button.option1Select {
         </div>
         <div class='chat-footer'>
             <input type='text' id='userMessage' placeholder='Enter your message...'>
-            <button><img src='{{ asset('assets/images/fileupload.png')}}' /></button>
-            <button id='sendButton'><img src='{{ asset('assets/images/Vector.png')}}' /></button>
+            <button><img src="{{ asset('public/assets/images/fileupload.png')}}" /></button>
+            <button id='sendButton'><img src="{ asset('public/assets/images/Vector.png')}}" /></button>
         </div>
     </div>
 
@@ -281,7 +281,7 @@ button.option1Select {
             function handleUserMessage(message,botId) {
                 appendUserMessage(message);
                 $.ajax({
-                    url: '/chatbot/message',
+                    url: {{url('/chatbot/message')}},
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

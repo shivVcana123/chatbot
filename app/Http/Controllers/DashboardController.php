@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BotUser;
 use App\Models\Template;
 use App\Models\ChatBot;
+use App\Models\QuestionAnswer;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Auth;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Twilio\Rest\Client;
 
 class DashboardController extends Controller
@@ -115,68 +120,168 @@ class DashboardController extends Controller
     
 
 
-    public function index()
-    {
-        return view('dashboard.dashboard');
+    // public function index()
+    // {
+    //     $getUserCount = User::count();
+    //     $getBotCount = ChatBot::count();
+    //     $getBotUserCount = BotUser::count();
+    //     $getChatCount = QuestionAnswer::count();
+
+
+     
+    //     $timeFrames = [
+    //         '5years' => Carbon::now()->subYears(5),
+    //         'year' => Carbon::now()->subYear(),
+    //         'month' => Carbon::now()->subDays(30),
+    //         'week' => Carbon::now()->subDays(7),
+    //     ];
+
+    //     $chartData = [];
+
+    //     foreach ($timeFrames as $key => $startDate) {
+    //         $chartData[$key] = [
+    //             'users' => User::where('created_at', '>=', $startDate)->get(),
+    //             'bots' => ChatBot::where('created_at', '>=', $startDate)->get(),
+    //             'bot_users' => BotUser::where('created_at', '>=', $startDate)->get(),
+    //             // You might want to fetch more detailed data here if necessary
+    //         ];
+    //     }
+
+    //     // Prepare the data for the chart
+
+    //     $chartDataJson = json_encode($chartData);
+    //     return view('dashboard.dashboard',compact('getUserCount','getBotCount','getChatCount','getBotUserCount','chartDataJson'));
+    // }
+
+
+
+//     public function index()
+// {
+//     $getUserCount = User::count();
+//     $getBotCount = ChatBot::count();
+//     $getBotUserCount = BotUser::count();
+//     $getChatCount = QuestionAnswer::count();
+
+//     $timeFrames = [
+//         '5years' => Carbon::now()->subYears(5),
+//         'year' => Carbon::now()->subYear(),
+//         'month' => Carbon::now()->subDays(30),
+//         'week' => Carbon::now()->subDays(7),
+//     ];
+
+//     $chartData = [];
+
+//     foreach ($timeFrames as $key => $startDate) {
+//         $chartData[$key] = [
+//             'users' => User::where('created_at', '>=', $startDate)->count(),
+//             'bots' => ChatBot::where('created_at', '>=', $startDate)->count(),
+//             'bot_users' => BotUser::where('created_at', '>=', $startDate)->count(),
+//         ];
+//     }
+
+//     // dd($chartData);
+
+//     // Convert chart data to JSON
+//     $chartDataJson = json_encode($chartData);
+//     return view('dashboard.dashboard', compact('getUserCount', 'getBotCount', 'getChatCount', 'getBotUserCount', 'chartDataJson'));
+// }
+
+public function index()
+{
+    // Total counts
+    $getUserCount = User::where('role','!=','1')->count();
+    $getBotCount = ChatBot::count();
+    $getBotUserCount = BotUser::count();
+    $getChatCount = QuestionAnswer::count();
+
+    // Define time frames for chart data
+    $timeFrames = [
+        '5years' => Carbon::now()->subYears(5),
+        'year' => Carbon::now()->subYear(),
+        'month' => Carbon::now()->subDays(30),
+        'week' => Carbon::now()->subDays(7),
+    ];
+
+    $chartData = [];
+
+    foreach ($timeFrames as $key => $startDate) {
+        // Group users by date and count for each time frame
+        $usersByDate = User::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
+            ->where('created_at', '>=', $startDate)
+            ->where('role','!=','1')
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get()
+            ->pluck('count', 'date'); // Return key-value pairs of 'date' => 'count'
+// dd( $usersByDate);
+        // Group bots by date and count for each time frame
+        $botsByDate = ChatBot::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
+            ->where('created_at', '>=', $startDate)
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get()
+            ->pluck('count', 'date');
+        // dd($botsByDate);
+        // Group bot users by date and count for each time frame
+        $botUsersByDate = BotUser::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
+            ->where('created_at', '>=', $startDate)
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get()
+            ->pluck('count', 'date');
+           
+        // Store the data for the chart
+        $chartData[$key] = [
+            'users' => $usersByDate,
+            'bots' => $botsByDate,
+            'bot_users' => $botUsersByDate,
+        ];
+    }
+    
+
+    // Convert chart data to JSON
+    $chartDataJson = json_encode($chartData);
+
+    // Pass data to the view
+    return view('dashboard.dashboard', compact('getUserCount', 'getBotCount', 'getChatCount', 'getBotUserCount', 'chartDataJson'));
+}
+
+
+
+
+public function chatanalytics($id)
+{
+    // Define time frames for chart data
+    $timeFrames = [
+        '5years' => Carbon::now()->subYears(5),
+        'year' => Carbon::now()->subYear(),
+        'month' => Carbon::now()->subDays(30),
+        'week' => Carbon::now()->subDays(7),
+    ];
+
+    $chartData = [];
+
+    foreach ($timeFrames as $key => $startDate) {
+        // Group bot users by date and count for each time frame
+        $botUsersByDate = BotUser::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
+            ->where('created_at', '>=', $startDate)
+            ->where('chat_bot_id', $id)
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get()
+            ->pluck('count', 'date');
+        
+        // Store the data for the chart
+        $chartData[$key] = [
+            'categories' => $botUsersByDate->keys(), // dates (categories for x-axis)
+            'counts' => $botUsersByDate->values(), // counts (data for y-axis)
+        ];
     }
 
-    public function templates()
-    {
-        return view('dashboard.template');
-    }
+    // Convert chart data to JSON
+    $chartDataJson = json_encode($chartData);
 
+    return view('dashboard.chatanalytics', compact('chartDataJson'));
+}
 
-    public function templateView($id)
-    {
-        $templates = Template::where('id', $id)->first();
-        // dd($templates );
-        return view('dashboard.viewtemplate', compact('templates'));
-    }
-
-    public function addBotTemplate(Request $request)
-    {
-        // dd($request->all());
-        $tempData = json_decode($request->tempData, true);
-
-        if (is_array($tempData)) {
-            $chatBot = ChatBot::create([
-                'name'              => $request->bot_name,
-                'width'              => $tempData['width'] ?? null,
-                'type'              =>  $request->type,
-                'intro_message'     => $tempData['intro_message'] ?? null,
-                'main_color'        => $tempData['main_color'] ?? null,
-                'bubble_background' => $tempData['bubble_background'] ?? null,
-                'logo'              => $tempData['logo'] ?? null,
-                'description'       => $tempData['description'] ?? null,
-                'font'              => $tempData['font'] ?? null,
-                'font_size'         => $tempData['font_size'] ?? null,
-                'bot_position'      => $tempData['bot_position'] ?? null,
-                'message_bubble'    => $tempData['message_bubble'] ?? null,
-                'radius'            => $tempData['radius'] ?? null,
-                'text_alignment'    => $tempData['text_alignment'] ?? null,
-                'question_color'    => $tempData['question_color'] ?? null,
-                'answer_color'      => $tempData['answer_color'] ?? null,
-                'status'            => $tempData['status'] ?? null,
-                'header_color'      => $tempData['header_color'] ?? null,
-                'background_color'  => $tempData['background_color'] ?? null,
-                'option_color'      => $tempData['option_color'] ?? null,
-                'option_border_color' => $tempData['option_border_color'] ?? null,
-                'button_design'     => $tempData['button_type'] ?? null,
-                'button_color'       => $tempData['button_color'] ?? null,
-                'button_text_color'       => $tempData['button_text_color'] ?? null,
-            ]);
-
-            // Return success or redirect
-            return response()->json(['success' => true, 'data' => $chatBot], 200);
-        } else {
-            // If the tempData is not an array or cannot be decoded
-            return response()->json(['error' => 'Invalid data format'], 400);
-        }
-    }
-
-
-    public function chatanalytics()
-    {
-        return view('dashboard.chatanalytics');
-    }
 }

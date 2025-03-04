@@ -10,148 +10,112 @@ use App\Models\QuestionAnswer;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Models\BotUser;
-
+use App\Models\NewQuestion;
+use App\Models\QuestionOption;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Response;
+use App\Helpers\Helper;
 
 class ChatBotController extends Controller
 {
 
-    public function botChat($id){
+    public function botChat($id)
+    {
         // $botChats = ChatBot::with('botQuestions','botQuestions.questionAnswers')->where('id',$id)->get();
-        $botChats = BotUser::with('questionAnswer','questionAnswer.botQuestion','questionAnswer.chatBots')->where('id',$id)->get();
-        // dd($botChats);
-        return view('bots.bot-chat',compact('botChats'));
+        // $botChats = BotUser::with('questionAnswer', 'questionAnswer.botQuestion', 'questionAnswer.chatBots')->where('id', $id)->get();
+        if(Auth::user()->role == 1){
+            $botChats = BotUser::with('bot', 'questionAnswer','questionAnswer.botQuestion')->where('chat_bot_id', $id)->get();
+        }else{
+            $botChats = BotUser::with('bot', 'questionAnswer','questionAnswer.botQuestion')->where('chat_bot_id', $id)->get();
+        }
+
+        return view('bots.bot-chat', compact('botChats'));
     }
-    
-    // public function editPrefrence(Request $request)
-    // {
-    //    return 1;
-    // }    
+
+    public function getBotChatData($id)
+    {
+       
+        $botChatData = BotUser::with('bot', 'questionAnswer','questionAnswer.botQuestion','lastResponse')->where('id', $id)->get();
+        // dd($botChatData);
+        return response()->json(['data' => $botChatData]);
+        
+    }
 
     //single bot question listing
+
     public function singleBotListing($id)
     {
-        $bots=BotQuestion::where('chat_bot_id',$id)->get();
-        $sequence = BotQuestion::select('sequence')->where('chat_bot_id',$id)->get();
+    
+        $bots = BotQuestion::where('chat_bot_id', $id)->get();
+        $sequence = BotQuestion::select('sequence')->where('chat_bot_id', $id)->get();
 
         $questionFlowIds = BotQuestionFlow::pluck('bot_question_id2')->toArray();
         $questionsNotInFlow = BotQuestion::where('chat_bot_id', $id)
             ->whereNotIn('id', $questionFlowIds)
             ->get();
 
-        return view('bots.single-bot-listing',compact('bots','id','questionsNotInFlow'));
-    }    
-    // saving questions flow .
-    public function addQuestionFlow(Request $request)
+        return view('bots.single-bot-listing', compact('bots', 'id', 'questionsNotInFlow'));
+    }
+   
+    public function botQuestion($bot_id, $question_id = null)
     {
-        $addFlow = BotQuestionFlow::where('bot_question_id', $request->question_1)->first();
-        if(!$addFlow)
-        {
-            $addFlow = new BotQuestionFlow();
+        $chatBot = ChatBot::find($bot_id);
+        $botQuestions = BotQuestion::find($question_id);
+        if ($botQuestions && is_string($botQuestions->options)) {
+            $botQuestions->options = json_decode($botQuestions->options, true);
         }
-        $addFlow->bot_question_id = $request->question_1;
-        $addFlow->bot_question_id2 = $request->question_2;
-        $addFlow->chat_bot_id = $request->bot_id;
-
-        $addFlow->save();
-        $questionFlowIds = BotQuestionFlow::pluck('bot_question_id2')->toArray();
-        $questionsNotInFlow = BotQuestion::where('chat_bot_id', $request->bot_id)
-            ->whereNotIn('id', $questionFlowIds)
-            ->where('id', '!=', $request->question_1)
-            ->get();
-
-        return  response()->json($questionsNotInFlow);
-
+        return view('bots/bot-question', compact('chatBot', 'botQuestions'));
     }
-
-
-    //page for adding questions for bot
-    public function botQuestion($id)
+    public function questionsDelete($id)
     {
-        return view('bots/bot-question',compact('id'));
+        $questionsDelete = BotQuestion::find($id);
+        $questionsDelete->delete();
+        return redirect()->back()->with('success', 'Question deleted successfully.');
     }
 
+    
+    public function downloadHistoryPdf($id)
+    {
+   
+        $data = BotUser::with('bot', 'questionAnswer','questionAnswer.botQuestion','lastResponse')
+                ->where('id', $id)
+                ->get();
+            if ($data->isEmpty()) {
+                return back()->withErrors('No data found for the selected user.');
+            }
 
-
-    // public function addQuestion(Request $request)
-    // {
-    //     // Loop through each question in the "questions" array
-    //     dd($request->all());
-    //     foreach ($request->questions as $questionData) {
-            
-    //         $questionText = strtolower($questionData['question']);
-    //         $questionType = '';
-            
-    //         // Determine the type of question based on the content
-    //         if (strpos($questionText, 'email') !== false) {
-    //             $questionType = "email";
-    //         } elseif (strpos($questionText, 'contact') !== false) {
-    //             $questionType = "contact";
-    //         } elseif (strpos($questionText, 'name') !== false) {
-    //             $questionType = "name";
-    //         }
-
-    //         // Create a new BotQuestion instance
-    //         $botQuestion = new BotQuestion();
-            
-    //         // Set the common fields
-    //         $botQuestion->chat_bot_id = $questionData['bot_id'];
-    //         $botQuestion->question = $questionData['question'];
-    //         $botQuestion->question_type = $questionType;
-    //         $botQuestion->type = 'bot';
-
-    //         // Handle question based on its type
-    //         if ($questionData['type'] == 'option') {
-    //             // For MCQ (multiple choice questions), store the options
-    //             $botQuestion->option1 = $questionData['options'][0] ?? null;
-    //             $botQuestion->option2 = $questionData['options'][1] ?? null;
-    //         } else {
-    //             // For single-answer questions, store the answer
-    //             $botQuestion->answer = $questionData['answer'] ?? null;
-    //         }
-
-    //         // Save each question
-    //         $botQuestion->save();
-    //     }
-
-    //     // Redirect back with success message
-    //     return redirect()->back()->with('success', 'Questions added successfully!');
-    // }
-
+        $pdf = Pdf::loadView('bots.chat-history', compact('data'));
+        return $pdf->download('chat-history.pdf');
+    }
 
     public function addQuestion(Request $request)
     {
-        // dd($request);
-        // Initialize an array to hold questions
-        $questions = [];
-    
-        // Loop through each question in the "questions" array
-        foreach ($request->questions as $questionData) {
-            // Ensure bot_id and question text are set and valid
-            $botId = $questionData['bot_id'] ?? null;
-            $questionText = $questionData['text'] ?? null;
-    
-            if ($botId && $questionText) {
-                $questions[] = [
-                    'bot_id' => $botId,
-                    'question' => $questionText,
-                    'options' => $questionData['options'] ?? []
-                ];
-            }
+        $newquestion = new NewQuestion();
+        $newquestion->question = $request->question;
+        $newquestion->chat_bot_id = $request->chat_bot_id;
+        $newquestion->option_id = $request->option_id ?? 0;
+        $newquestion->parent_id = $request->parent_id ?? 0;
+        $newquestion->save();
+        $optionIds = [];
+        foreach ($request->option as $option) {
+            $questionoption = new QuestionOption();
+            $questionoption->option = $option;
+            $questionoption->bot_question_id = $newquestion->id;
+            $questionoption->save();
+            $optionIds[] = $questionoption->id;
         }
-    
-        // Store each question in the database
-        foreach ($questions as $questionData) {
-            $botQuestion = new BotQuestion();
-            $botQuestion->chat_bot_id = $questionData['bot_id'];
-            $botQuestion->question_type = 'Question';
-            $botQuestion->question = $questionData['question'];
-            $botQuestion->options = $questionData['options']; //json_encode($questionData['options']); // Store options as JSON
-            $botQuestion->save();
-        }
-    
-        return redirect()->back()->with('success', 'Questions added successfully!');
+        $data = [
+            'parent_id' => $newquestion->id,
+            'option_ids' => $optionIds,
+            'chat_bot_id' => $request->chat_bot_id,
+        ];
+        return response()->json(['data' => $data], 200);
     }
-    
+
+
     public function getQuestion($botId)
     {
         $question = BotQuestion::where('bot_id', $botId)->first();
@@ -170,7 +134,7 @@ class ChatBotController extends Controller
         return view('welcome', compact('bot'));
     }
 
-   
+
     public function websiteChat()
     {
         return view('bots.website-bot');
@@ -185,334 +149,331 @@ class ChatBotController extends Controller
         $botId = $request->input('bot_id');
         $question = BotQuestion::find($botId);
         $bot = ChatBot::find($request->chatbotId);
-
-        if(!$question)
+        $reply = Helper::getData($message,$bot,$request);
+        if(count($reply))
         {
-            $reply = $this->getData($message, $bot);
+            return response()->json(['reply' => $reply]);
+        }
+        else {
 
-          
-        }else{
-
-            $reply = $this->generateReply($message, $bot,$question,$request);
+             $reply = Helper::generateReply($message,$bot,$question,$request);
         }
         return response()->json(['reply' => $reply]);
-
     }
-    public function getData($message, $bot)
-    {
-        if($message == 'schedule a meeting')
-        {
-            $url = '<a target="_blank" href="https://calendly.com/anshul_seo/30min?month=2024-09">click here to schedule a meeting</a>';
+    // public function getData($message, $bot)
+    // {
+    //     if ($message == 'schedule a meeting') {
+    //         $url = '<a target="_blank" href="https://calendly.com/anshul_seo/30min?month=2024-09">click here to schedule a meeting</a>';
+    //         $data = [
+    //             'message' => $url,
+    //             'question_id' => 0,
+    //             'chat_bot_type' => $bot->type,
+    //         ];
+    //         return $data;
+    //     } else if ($bot->type != 'lead' && $message == 'chat with live agent') {
+    //         $data = [
+    //             'message' => "Let me check if any agent is available for you....please wait.",
+    //             'question_id' => 0,
+    //             'chat_bot_type' => $bot->type,
+    //         ];
+    //         return $data;
+    //     } elseif ($message == 'exit') {
+    //         $data = [
+    //             'message' => "Thanx for the information we will contact you soon.......",
+    //             'question_id' => 0,
+    //             'chat_bot_type' => $bot->type,
+    //         ];
+    //         return $data;
+    //     } else {
+    //       return $data = [];
+    //     }
+    // }
 
-            //add anchor tag linkis not working
-         
-            $data = [
-                'message'=>$url,
-                'question_id' =>0,
-                'chat_bot_type' =>$bot->type,
-            ];
-            return $data;
-        }
-        else if($message == 'chat with live agent')
-        { 
+    // private function generateReply($message, $bot, $question, $request)
+    // {
+    //     $coloum = '';
+    //     if ($question) {
+    //         if ($question->answer_type == 'email') {
+    //             if (!preg_match('/^[\w._%+-]+@[\w.-]+\.[a-zA-Z]{2,}$/', $message)) {
+    //                 $data = [
+    //                     'message' => "Enter a valid email!",
+    //                     'question_id' => $question->id
+    //                 ];
+    //                 return $data;
+    //             }
+    //             $coloum = 'email';
+    //         } else if ($question->answer_type == 'contact') {
+    //             if (!preg_match('/^\+?[0-9]{10,15}$/', $message)) {
+    //                 $data = [
+    //                     'message' => "Enter a valid phone number!",
+    //                     'question_id' => $question->id
+    //                 ];
+    //                 return $data;
+    //             }
+    //             $coloum = 'contact';
+    //         } else if ($question->answer_type == 'name') {
+    //             if (!preg_match('/^[\p{L} ]+$/u', $message)) {
 
-            // add twilio acount and end message to the livwe agent using agent function.
-            $data = [
-                'message'=>"Let me check if any agent is available for you....please wait.",               
-                'question_id' =>0,
-                'chat_bot_type' =>$bot->type,
+    //                 $data = [
+    //                     'message' => "Enter a valid name!",
+    //                     'question_id' => $question->id
+    //                 ];
+    //                 return $data;
+    //             }
+    //             $coloum = 'name';
+    //         } else {
+    //             if (!preg_match('/./', $message)) { // Simple check for non-empty string
+    //                 $data = [
+    //                     'message' => "Enter a valid data!",
+    //                     'question_id' => $question->id
+    //                 ];
+    //                 return $data;
+    //             }
+    //         }
+    //     }
 
-            ];
-            return $data;
-            
-        }elseif($message == 'exit')
-        {
-            $data = [
-                'message'=>"Thanx for the information we will contact you soon...",
-                'question_id' =>0,
-                'chat_bot_type' =>$bot->type,
+    //     $botUserData = BotUser::find($request->bot_user_id);
+    //     if($request->bot_id !='0')
+    //     {
+    //         if (!$botUserData) {
+    //             $botUserData = new BotUser;
+    //             $botUserData->chat_bot_id = $bot->id;
+    //             $botUserData->save();
+    //         } else {
+    //             if ($coloum != '') {
+    //                 $botUserData->$coloum = $message;
+    //                 $botUserData->save();
+    //             }
+    //         }
+    //     }
+    //     $saveanswer = new QuestionAnswer;
+    //     $saveanswer->bot_question_id = ($question) ? $question->id : '0';
+    //     $saveanswer->answer = $message;
+    //     $saveanswer->user_id = 1; //chat bot ka malik 
+    //     $saveanswer->chat_bot_id = $bot->id;
+    //     $saveanswer->status = '1';
+    //     $saveanswer->bot_user_id = ($botUserData)?$botUserData->id:$request->bot_user_id; // kon chat krne aaya
+    //     $saveanswer->save();
 
-            ];
-            return $data;
-        }
-        else
-        {
-            $data = [
-                'message'=>"Thanx for the information we will contact you soon...",
-                'question_id' =>0,
-                'chat_bot_type' =>$bot->type,
+    //     $questionsIds = QuestionAnswer::where('chat_bot_id', $bot->id)
+    //         ->where('status', '1')
+    //         ->where('bot_question_id', '!=', '0')
+    //         ->pluck('bot_question_id')
+    //         ->toArray();
+    //     $questionsIds = array_unique($questionsIds);
+    //     if ($bot->type == 'lead') {
+    //         if($request->option_id != '')
+    //         {
+    //             $questions = BotQuestion::where(function ($query) use ($bot, $request) {
+    //                 // Match chat_bot_id with the specific bot id or global (0)
+    //                 $query->where('chat_bot_id', $bot->id)
+    //                     ->orWhere('chat_bot_id', 0);
+    //                     })
+    //             ->whereNotIn('id', $questionsIds)
+    //             ->where('option_id',$request->option_id) 
+    //             ->first();
+    //         }else{
+    //             $questions = BotQuestion::where(function ($query) use ($bot,$request) {
+    //                 $query->where('chat_bot_id', $bot->id)
+    //                     ->orWhere('chat_bot_id', 0);
+    //             })
+    //             ->whereNotIn('id', $questionsIds)
+    //             ->first();
+    //         }
+    //     } else {
 
-            ];
-            return $data;
-        }
-    }
+    //         $data = BotQuestion::where(function ($query) use ($bot) {
+    //             $query->Where('chat_bot_id', 0);
+    //         })
+    //         ->whereNotIn('id', $questionsIds)
+    //         ->first();
         
-    private function generateReply($message, $bot,$question,$request)
-    {
-        $coloum = '';
-        if($question){
-        if ($question->answer_type == 'email')  {
-            if (!preg_match('/^[\w._%+-]+@[\w.-]+\.[a-zA-Z]{2,}$/', $message)) {
-                $data = [
-                    'message'=>"Enter a valid email!",
-                    'question_id' =>$question->id
-                ];
-                return $data;
-            }
-            $coloum = 'email';
-        } else if ($question->answer_type == 'contact') {
-            if (!preg_match('/^\+?[0-9]{10,15}$/', $message)) {
-                $data = [
-                    'message'=>"Enter a valid phone number!",
-                    'question_id' =>$question->id
-                ];
-                return $data;
-            }
-            $coloum = 'contact';
 
-        } else if ($question->answer_type == 'name') {
-            if (!preg_match('/^[\p{L} ]+$/u', $message)) {
+    //         if ($data) {
+    //             $length = 0;
+    //             $questions = $data;
+    //         } else {
+    //             $length = 1;
+    //             $questions = BotQuestion::where(function ($query) use ($bot) {
+    //                 $query->where('chat_bot_id', $bot->id);
+    //             })
+    //             ->whereNotIn('id', $questionsIds)
+    //             ->get();
+    //         }
+    //     }
+    //     $getAllOptions = '';
+    //     if ($questions) {
+    //         $arr = [];
+    //         if ($bot->type == 'lead') {
+    //             $questionNew = $questions->question;
+    //             $getAllOptions = QuestionOption::where('bot_question_id', $questions->id)
+    //             ->pluck('id');
+    //             $optionNew = ($questions->options) ? $questions->options : null;
+              
 
-                $data = [
-                    'message'=>"Enter a valid name!",
-                    'question_id' =>$question->id
-                ];
-                return $data;
-            }
-            $coloum = 'name';
+    //             $questionId = $questions->id;
+    //         } else {
+    //             $questionId=[];
+    //             if ($length > 0) {
+    //                 if ($message == 'schedule a meeting') {
+    //                     //add anchor tag linkis not working
+    //                     $url = '<a href="https://calendly.com/anshul_seo/30min?month=2024-09">click here to schedule a meeting</a>';
+    //                     $data = [
+    //                         'message' => $url,
+    //                         'question_id' => 0,
+    //                     ];
+    //                     return $data;
+    //                 } else if ($message == 'chat with live agent') {
 
-        } else {
-            if (!preg_match('/./', $message)) { // Simple check for non-empty string
-                $data = [
-                    'message'=>"Enter a valid data!",
-                    'question_id' =>$question->id
-                ];
-                return $data;
-            }
-        }
-    }
+    //                     // add twilio acount and end message to the livwe agent using agent function.
+    //                     $data = [
+    //                         'message' => "Let me check if any agent is available for you....please wait.",
+    //                         'question_id' => 0,
+    //                     ];
+    //                     return $data;
+    //                 } elseif ($message == 'exit') {
+    //                     $data = [
+    //                         'message' => "Thanx for the information we will contact you soon...",
+    //                         'question_id' => 0,
+    //                     ];
+    //                     return $data;
+    //                 } else {
 
-
-
-            $botUserData = BotUser::find($request->bot_user_id);
-            if(!$botUserData)
-            {
-                $botUserData = new BotUser;
-                $botUserData->chat_bot_id = $bot->id;
-                //$botUserData->$coloum = $message;
-                $botUserData->save();
-            }
-            else
-            {
-                if($coloum != '')
-                {
-                    $botUserData->$coloum = $message;
-                    $botUserData->save();
-                }
-            }
-           
-        $saveanswer = new QuestionAnswer;
-        $saveanswer->bot_question_id = ($question)?$question->id:'0';
-        $saveanswer->answer = $message; 
-        $saveanswer->user_id = 1;//chat bot ka malik 
-        $saveanswer->chat_bot_id = $bot->id;
-        $saveanswer->status = '1';
-        $saveanswer->bot_user_id = $botUserData->id;// kon chat krne aaya
-        $saveanswer->save();
-
-
-
-        $questionsIds = QuestionAnswer::where('chat_bot_id', $bot->id)
-        ->where('status', '1')
-        ->where('bot_question_id','!=', '0')
-        ->pluck('bot_question_id')
-        ->toArray();
-        $questionsIds = array_unique($questionsIds);
-        if($bot->type == 'lead')
-        {
-            $questions = BotQuestion::where(function ($query) use ($bot) {
-                $query->where('chat_bot_id', $bot->id)
-                      ->orWhere('chat_bot_id', 0);
-            })
-            ->whereNotIn('id', $questionsIds)
-            ->first();
-            
-        }else{
-
-            $data = BotQuestion::where(function ($query) use ($bot) {
-               $query->Where('chat_bot_id', 0);
-                   
-            })
-            ->whereNotIn('id', $questionsIds)
-            ->first();
-
-            if($data)
-            {
-                $length = 0;
-                $questions = $data;
-            }else
-            {
-                $length = 1;
-                $questions = BotQuestion::where(function ($query) use ($bot) {
-                    $query->where('chat_bot_id', $bot->id);
-                 })
-                 ->whereNotIn('id', $questionsIds)
-                 ->get();
-            }
-            
-        }
-            if($questions)
-            {
-
-                $arr =[];
-                if($bot->type == 'lead')
-                {
-                    $questionNew = $questions->question;
-                    $optionNew =($questions->options)?$questions->options:null;
-                    $questionId =$questions->id;
-                }else{
-                    if($length >0)
-                    {
+    //                     $botAnswer = BotQuestion::where('question', 'LIKE', '%' . $message . '%')->first();
                       
-                        if($message == 'schedule a meeting')
-                        {
-                            //add anchor tag linkis not working
-                            $url ='<a href="https://calendly.com/anshul_seo/30min?month=2024-09">click here to schedule a meeting</a>';
-                            $data = [
-                                'message'=>$url,
-                                'question_id' =>0,
-                            ];
-                            return $data;
-                        }
-                        else if($message == 'chat with live agent')
-                        { 
-        
-                            // add twilio acount and end message to the livwe agent using agent function.
-                            $data = [
-                                'message'=>"Let me check if any agent is available for you....please wait.",               
-                                'question_id' =>0,
-                            ];
-                            return $data;
-                            
-                        }elseif($message == 'exit')
-                        {
-                            $data = [
-                                'message'=>"Thanx for the information we will contact you soon...",
-                                'question_id' =>0,
-                            ];
-                            return $data;
-                        }else{
-                            $botAnswer = BotQuestion::where('question', 'LIKE', '%' . $message . '%')->first();
-                            $questionNew =($botAnswer)?$botAnswer->answer:''. '<br><br>Please select to know more about our website.....';
+
+    //                     $questionNew = ($botAnswer) ? $botAnswer->answer : '' . '<br><br>Please select to know more about our website.....';
+
+    //                     foreach ($questions as $ques) {
+    //                         //will add the question only
+
+    //                         $arr[] = $ques->question;
+    //                         $questionId[] = $ques->id;
+    //                     }
+    //                 // dd($questionId);
+
+    //                     $optionNew = $arr;
+    //                     if (!count($optionNew)) {
+    //                         if($botAnswer)
+    //                         {
+    //                             if($botAnswer->answer)
+    //                             {
+    //                                 $optionNew = array('Please select to know more about our website.....','schedule a meeting', 'chat with live agent');
+    //                             }else
+    //                             {
+    //                                 $optionNew = array('schedule a meeting', 'chat with live agent');
+    //                             }
+    //                         }else
+    //                         {
+    //                             $optionNew = array('schedule a meeting', 'chat with live agent');
+    //                         }
                            
+    //                     }
+    //                 }
+    //             } else {
+    //                 // dd('dsfsdfdsfgd');
+    //                 $questionNew = $questions->question;
+    //                 $optionNew = ($questions->options) ? $questions->options : null;
+    //                 $questionId = $questions->id;
+    //             }
+    //         }
+    //       if($optionNew)
+    //       {
+    //         array_push($optionNew, "exit");
+    //       }
+    //       if($questions)
+    //       {
+    //         $newQuestionId = $questionId;
+    //       }else
+    //       {
+    //         $newQuestionId = '';
+    //       }
+    //         $data = [
+    //             'message' => $questionNew,
+    //             'question_id' => ($questions->count() > 0) ? $questionId : '',
+    //             'bot_user_id' => ($botUserData)?$botUserData->id:'',
+    //             'chat_bot_type' => $bot->type,
+    //             'options' =>  $optionNew,
+    //             'questions' => $questions,
+    //             'question_option_ids' => ($getAllOptions) ?$getAllOptions:$newQuestionId,
+    //         ];
+    //     } else {
+
+    //         if ($message == 'schedule a meeting') {
+    //             //add anchor tag linkis not working
+    //             $url = '<a href="https://calendly.com/anshul_seo/30min?month=2024-09">click here to schedule a meeting</a>';
+    //             $data = [
+    //                 'message' => $url,
+    //                 'question_id' => 0,
+    //             ];
+    //         } else if ($message == 'chat with live agent') {
+    //             $data = [
+    //                 'message' => "Let me check if any agent is available for you....please wait.",
+    //                 'question_id' => 0,
+    //             ];
+    //         } elseif ($message == 'exit') {
+    //             $data = [
+    //                 'message' => "Thanx for the information we will contact you soon.......",
+    //                 'question_id' => 0,
+    //                 'chat_bot_type' => $bot->type,
     
-                            foreach($questions as $ques)
-                            {
-                                //will add the question only
+    //             ];
+    //             return $data;
+    //         } else {
+    //             if($bot->type == 'lead')
+    //             {
+    //                 $optionNew = array('schedule a meeting','exit');
+
+    //             }else{
+    //                 $optionNew = array('schedule a meeting');
+
+    //             }
+    //             $data = [
+    //                 'message' => "Please Select from following to know more about us...",
+    //                 'question_id' => 0,
+    //                 'chat_bot_type' => $bot->type,
+    //                 'options' =>  $optionNew,
     
-                                $arr[] = $ques->question;
-                                $questionId[] = $ques->id;
-                            }
-                            $optionNew = $arr;
-                            if(!count($optionNew))
-                            {
-                                $optionNew = array('Please select if you want to know more about us.','schedule a meeting','chat with live agent','exit');
-                            }
-                        }
+    //             ];
+    //             return $data;
+    //         }
+    //     }
+    //     return $data;
+    // }
 
-
-
-                     
-                    }else{
-                        $questionNew = $questions->question;
-                        $optionNew =($questions->options)?$questions->options:null;
-                        $questionId =$questions->id;
-                    }
-
-                }
-                     $data = [
-                        'message'=>$questionNew,
-                        'question_id' =>($questions->count()>0)?$questionId:'',
-                        'bot_user_id' =>$botUserData->id,
-                        'chat_bot_type' =>$bot->type,
-                        'options'=>  $optionNew,   
-                        'questions' =>$questions,
-                    ];
-                
-            }else
-            {
-
-                if($message == 'schedule a meeting')
-                {
-                    //add anchor tag linkis not working
-                    $url ='<a href="https://calendly.com/anshul_seo/30min?month=2024-09">click here to schedule a meeting</a>';
-                    $data = [
-                        'message'=>$url,
-                        'question_id' =>0,
-                    ];
-                }
-                else if($message == 'chat with live agent')
-                { 
-
-                    // add twilio acount and end message to the livwe agent using agent function.
-                    $data = [
-                        'message'=>"Let me check if any agent is available for you....please wait.",               
-                        'question_id' =>0,
-                    ];
-                    
-                }else
-                {
-                    $data = [
-                        'message'=>"Thanx for the information we will contact you soon...",
-                        'question_id' =>0,
-                    ];
-                }
-               
-            }
-            return $data;
-        
-    }
-   
 
     public function scriptchatbots($id)
     {
-        $chatbot = ChatBot::find($id);       
-       //as for now there is 3 question  common for every bot so manage the chatbotid .
-       
-        $questionsIds = QuestionAnswer::pluck('bot_question_id')->where('chat_bot_id ',$id)->where('status ','0')->toArray();
-            $questions = BotQuestion::where('chat_bot_id', $id)
+        $chatbot = ChatBot::find($id);
+        $questionsIds = QuestionAnswer::pluck('bot_question_id')->where('chat_bot_id ', $id)->where('status ', '0')->toArray();
+        $questions = BotQuestion::where('chat_bot_id', $id)
             ->orWhere('chat_bot_id', 0)
-        ->whereNotIn('id', $questionsIds)
+            ->whereNotIn('id', $questionsIds)
             ->first();
         if (!$chatbot) {
             return response('Chatbot not found', 404);
         }
-        // Generate the full URL for the logo
-        if(str_starts_with($chatbot->logo, 'public/'))
-        {
+        if (str_starts_with($chatbot->logo, 'public/')) {
             $logoUrl = Storage::url($chatbot->logo);
-        }
-        else
-        {
+        } else {
             $logoUrl = $chatbot->logo;
         }
-
-        // Fetch the CSRF token
         $csrfToken = csrf_token();
         $chatbot = ChatBot::find($id);
         if (!$chatbot) {
             return response('Chatbot not found', 404);
         }
+        $chatRadius = '';
 
-        // Generate the full URL for the logo
-        // $logoUrl = asset('storage/' . $chatbot->logo);
-        
-        // Fetch the CSRF token
+        if ($chatbot->message_bubble == '3') {
+            $chatRadius = '36.5px';
+        } else if ($chatbot->message_bubble == '2') {
+            $chatRadius = '15px 15px 15px 0px';
+        } else {
+            $chatRadius = '20px';
+        }
         $csrfToken = csrf_token();
-
-        // Generate the script with dynamic values
         $script = "(function() {
-
             // Function to inject the chatbot HTML and CSS into the page
             function injectChatbot() {
                 const chatbotContainer = document.createElement('div');
@@ -522,12 +483,11 @@ class ChatBotController extends Controller
                             <meta name='viewport' content='width=device-width, initial-scale=1.0'>
                         <meta name='csrf-token' content='{{ csrf_token() }}'>
                             <title>Chatbot</title>
-                            <script src='https://code.jquery.com/jquery-3.6.0.min.js'></script>
-
                             <body>
+                                <input type='hidden' name='bot_type' value='" . $chatbot->type . "' class='bot_type'>
 
                              <input type='hidden' name='chat_bot_id' value='" . $chatbot->id . "' class='chat_bot_id'>
-
+                                <input type='hidden' name='selected_option_id' value='' class='selected_option_id'>
                                 <input type='hidden' name='bot_user_id' value='' class='bot_user_id'>
                                 <div class='chat-toggle chat-boat-position chat-boat-position-" . $chatbot->bot_position . "' id='chatMessages'>
                                     <img src='" . $logoUrl . "' alt='Chat Icon' id='chat-toggle-btn'>
@@ -544,11 +504,15 @@ class ChatBotController extends Controller
                                         </div>
                                         <div class='icon-head'>
                                             <div>
-                                                <img src='" . asset('assets/images/reload.png') . "'>
+                                                <img src='" . asset('public/assets/images/reload.png') . "'>
                                             </div>
                                             <div class='closeicon'>
-                                                <img src='" . asset('assets/images/close.png') . "' id='close-chat-icon'>
+                                                <img src='" . asset('public/assets/images/close.png') . "' id='close-chat-icon'>
                                             </div>
+                                            <div>
+                                                <img class='download-history' src='".asset('public/assets/images/download.png')."' style='width: 13px; margin-left: 10px;' data-id='$chatbot->id'>
+                                            </div>
+
                                         </div>
                                     </div>
                                     <div class='chat-body'>
@@ -568,8 +532,8 @@ class ChatBotController extends Controller
                                     </div>
                                     <div class='chat-footer'>
                                         <input type='text' id='userMessage' placeholder='Enter your message...'>
-                                        <button><img src='" . asset('assets/images/fileupload.png') . "' /></button>
-                                        <button id='sendButton'><img src='" . asset('assets/images/Vector.png') . "' /></button>
+                                        <button><img src='" . asset('public/assets/images/fileupload.png') . "' /></button>
+                                        <button id='sendButton'><img src='" . asset('public/assets/images/Vector.png') . "' /></button>
                                     </div>
                                 </div>
                 `;
@@ -590,14 +554,18 @@ class ChatBotController extends Controller
                                     --bottom: 20px;
                                     --right: 20px;
                                 }
-                                
+                                button.option1Select {
+                                    text-align: left;
+                                    width: 90%;
+                                    margin-top: 15px !important;
+                                }
                                 .chat-boat-position-left {
                                     --bottom: 20px;
                                     --left: 20px;
                                 }
                                 
                                 .chat-boat-position-center {
-                                    --top: 37%;
+                                    --top: 51%;
                                     --right: 20px;
                                 }
                                 
@@ -622,8 +590,8 @@ class ChatBotController extends Controller
                                     font-family: Arial, sans-serif;
                                     display: flex;
                                     flex-direction: column;
-                                    position:absolute;
-                                    /* bottom: 80px;
+                                     /*position:absolute;
+                                    bottom: 80px;
                                     right: 20px; */
                                     display: none; /* Initially hidden */
                                 }
@@ -690,29 +658,32 @@ class ChatBotController extends Controller
                                     background-color: #014263;
                                 }
                                 
-                                .message.bot .text {
+                               .message.bot .text {
                                     width: 70%;
                                     padding: 10px;
                                     background-color:$chatbot->question_color;
-                                    border-radius: $chatbot->radius;
+                                    border-radius: $chatRadius;
                                     position: relative;
                                     color: white;
                                     font-weight: 400;
                                     line-height: 25px;
                                     word-wrap: break-word;
+                                    font-family: $chatbot->font;
+                                    font-size: $chatbot->font_size;
                                 }
                                 
                                 .message.user .text {
                                     background-color: $chatbot->answer_color;
                                     color: white;
-                                    border-radius: $chatbot->radius;
+                                    border-radius: $chatRadius;
                                     width: 70% !important;
                                     padding: 10px;
-                                    border-radius: 15px;
                                     position: relative;
                                     font-weight: 400;
                                     line-height: 25px;
                                     word-wrap: break-word;
+                                    font-family: $chatbot->font;
+                                    font-size: $chatbot->font_size;
                                 }
                                 
                                 .chat-footer {
@@ -780,7 +751,7 @@ class ChatBotController extends Controller
                     var chatbotId = $('.chat_bot_id').val();
                   
                     $.ajax({
-                        url: '/change/status',
+                        url: 'https://vcanaglobal.io/chatbot/change/status',
                         method: 'get',
                         data: {
                             bot_id: chatbotId
@@ -796,15 +767,26 @@ class ChatBotController extends Controller
                     const chatMessages = $('#chatMessages');
                     const userMessageInput = $('#userMessage');
                     const sendButton = $('#sendButton');
+
                     const chatBody = $('.chat-body');
 
                  $(document).on('click', '.option1Select', function() {
                         var data = $(this).val();
-                         var option_data_id = $(this).attr('dataID');
-                         if(option_data_id)
-                         {
-                                $('.question_id').val(option_data_id);
-                         }
+                        //  var option_data_id = $(this).attr('dataID');
+                        var selected_option_id = $(this).attr('dataattr');
+                        var bot_type = $('.bot_type').val();
+
+                        if(selected_option_id && bot_type == 'support')
+                        {
+                           var qq = $('.question_id').val(selected_option_id);
+                            console.log(qq);
+
+                        }else
+                        {
+                            console.log('sdgsdgd');
+                        }
+
+                            $('.selected_option_id').val(selected_option_id);
 
                         userMessageInput.val(data); // Assuming userMessageInput is defined elsewhere in your code
                     });
@@ -812,6 +794,7 @@ class ChatBotController extends Controller
                         var bot_user_id = $('.bot_user_id').val();
                         var botId = $('.question_id').val();
                         const message = userMessageInput.val().trim();
+
                         if (message) {
                             userMessageInput.val('');
                             handleUserMessage(message,botId,bot_user_id);
@@ -819,10 +802,10 @@ class ChatBotController extends Controller
                     });
 
                     function handleUserMessage(message,botId,bot_user_id) {
-
+                        var selectedOptionvalue =   $('.selected_option_id').val();
                         appendUserMessage(message);
                         $.ajax({
-                            url: '/chatbot/message',
+                            url: 'https://vcanaglobal.io/chatbot/chatbot/message',
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -832,7 +815,10 @@ class ChatBotController extends Controller
                                 message: message,
                                 bot_id: botId,
                                 bot_user_id:bot_user_id,
-                                chatbotId:chatbotId
+                                chatbotId:chatbotId,
+                                option_id:selectedOptionvalue,
+                                 parent_id:botId
+
                             }),
                             success: function(data) {
                             console.log('data');
@@ -843,11 +829,11 @@ class ChatBotController extends Controller
                           $('.bot_user_id').val(data.reply.bot_user_id);
 
 
-                            
+                                const question_option_ids = data.reply.question_option_ids ? data.reply.question_option_ids : [];
                                 const reply = data.reply.message ? data.reply.message : 'No reply received';
                                 const options = data.reply.options ?data.reply.options : [];
                                 const ids = data.reply.question_id ? data.reply.question_id : [];
-                                appendBotMessage(reply, options,ids);
+                                appendBotMessage(reply, options,ids,question_option_ids);
                             },
                             error: function(error) {
                                 console.error('Error:', error);
@@ -875,7 +861,7 @@ class ChatBotController extends Controller
                     // }
 
 
-                    function appendBotMessage(reply, options,ids) {
+                    function appendBotMessage(reply, options,ids,question_option_ids) {
                         // Create the bot message div
                         const botMessageDiv = $('<div>', { class: 'message bot' });
 
@@ -883,26 +869,39 @@ class ChatBotController extends Controller
 
                         console.log(reply);
                         //  botMessageDiv.append($('<div>', { class: 'text', text: reply }));
-botMessageDiv.append($('<div>', { class: 'text' }).html(reply));
+                            botMessageDiv.append($('<div>', { class: 'text' }).html(reply));
 
                         // Append the message to the chat body first
                         chatBody.append(botMessageDiv);
 
                         // Now check if options exist and append them separately after the message bot div
-                        if (options && options.length > 0) {
-                            options.forEach((option, index) => {
-                                const button = $('<button>', {
-                                    class: 'option1Select',
-                                    value: option,
-                                    text: option,
-                                    dataId: ids[index]
-                                });
-                                const buttonWrapper = $('<div>', { class: 'chat-btn' }).append(button);
+                       if (options && options.length > 0) {
+                                options.forEach((option, index) => {
+                                    let button;
+                                    
+                                    // if (option == 'Please select to know more about our website.....') {
+                                    //     button = $('<button>', {
+                                    //         value: option,
+                                    //         text: option,
+                                    //         data-attr:question_option_ids[index],
+                                    //     });
+                                    // } else {
+                                        button = $('<button>', {
+                                            class: 'option1Select',
+                                            value: option,
+                                            text: option,
+                                            dataattr :question_option_ids[index],
+                                            data: { id: ids[index] }  // Use data attribute in jQuery
+                                        });
+                                    // }
 
-                                // Append the buttons outside the message bot div, directly into the chat body
-                                chatBody.append(buttonWrapper);
-                            });
-                        }
+                                    const buttonWrapper = $('<div>', { class: 'chat-btn' }).append(button);
+
+                                    // Append the buttons outside the message bot div, directly into the chat body
+                                    chatBody.append(buttonWrapper);
+                                });
+                            }
+
 
                         // Scroll to the bottom to ensure new messages are visible
                         chatMessages.scrollTop(chatMessages.prop('scrollHeight'));
@@ -922,7 +921,6 @@ botMessageDiv.append($('<div>', { class: 'text' }).html(reply));
                     $('#close-chat-icon').on('click', function() {
                         $('#chat-container').hide();
                     });
-
                 });
         
             }
@@ -937,19 +935,17 @@ botMessageDiv.append($('<div>', { class: 'text' }).html(reply));
 
     public function changeStatus(Request $request)
     {
-        $questionAnswer = QuestionAnswer::where('chat_bot_id',$request->bot_id)->update(['status' => '0']);
-        if($questionAnswer)
-        {
+        $questionAnswer = QuestionAnswer::where('chat_bot_id', $request->bot_id)->update(['status' => '0']);
+        if ($questionAnswer) {
             return 1;
-        }else
-        {
+        } else {
             return 0;
         }
     }
     public function scriptchatbot($id)
     {
         $chatbot = ChatBot::find($id);
-        $questionsIds = QuestionAnswer::pluck('bot_question_id')->where('chat_bot_id ',$id)->toArray();    
+        $questionsIds = QuestionAnswer::pluck('bot_question_id')->where('chat_bot_id ', $id)->toArray();
         $questions = BotQuestion::where('chat_bot_id', $id)
             ->whereNotIn('id', $questionsIds)
             ->first();
@@ -957,14 +953,13 @@ botMessageDiv.append($('<div>', { class: 'text' }).html(reply));
 
             return response('Chatbot not found', 404);
         }
-    
+
         // Generate the full URL for the logo
         $logoUrl = asset('storage/' . $chatbot->logo);
-    
+
         // Fetch the CSRF token
         $csrfToken = csrf_token();
-    
-        return view('bots.chatbot', compact('chatbot', 'logoUrl', 'csrfToken','questions'));
 
+        return view('bots.chatbot', compact('chatbot', 'logoUrl', 'csrfToken', 'questions'));
     }
 }
