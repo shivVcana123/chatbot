@@ -10,7 +10,7 @@ use App\Models\LastResponse;
 
 
 class Helper
-{
+{  
 
 
     public static function getData($message, $bot,$request=null,$botUserData=null,$question=null)
